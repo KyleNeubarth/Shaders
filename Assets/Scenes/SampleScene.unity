@@ -1239,7 +1239,7 @@ PrefabInstance:
     - target: {fileID: 6270084952435618119, guid: 0717110ff84fe9f49811147ddc74df54,
         type: 3}
       propertyPath: m_Name
-      value: ShaderShowcase
+      value: UVShader
       objectReference: {fileID: 0}
     - target: {fileID: 1864769135922992086, guid: 0717110ff84fe9f49811147ddc74df54,
         type: 3}
@@ -1295,6 +1295,13 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1058943494607339069, guid: 0717110ff84fe9f49811147ddc74df54,
+        type: 3}
+      propertyPath: m_Text
+      value: 'Display
+
+        UV'
       objectReference: {fileID: 0}
     - target: {fileID: 7929471227305560858, guid: 0717110ff84fe9f49811147ddc74df54,
         type: 3}

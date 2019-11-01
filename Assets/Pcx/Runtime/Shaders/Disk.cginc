@@ -27,6 +27,7 @@ struct Attributes
 // Fragment varyings
 struct Varyings
 {
+	float2 uv : TEXCOORD0;
     float4 position : SV_POSITION;
 #if !PCX_SHADOW_CASTER
     half3 color : COLOR;
@@ -59,6 +60,7 @@ Varyings Vertex(Attributes input)
 
     // Set vertex output.
     Varyings o;
+	//set uv coords of varying so we can color point individually
     o.position = UnityObjectToClipPos(pos);
 #if !PCX_SHADOW_CASTER
     o.color = col;
@@ -113,12 +115,16 @@ void Geometry(point Varyings input[1], inout TriangleStream<Varyings> outStream)
     outStream.RestartStrip();
 }
 
+float2 uv : TEXCOORD0;
+
 half4 Fragment(Varyings input) : SV_Target
 {
 #if PCX_SHADOW_CASTER
     return 0;
 #else
-    half4 c = half4(input.color, _Tint.a);
+	//edit this line of code to get what I want!
+	//half4 c = half4(, 0, 0);
+	half4 c = half4(input.color, _Tint.a);
     UNITY_APPLY_FOG(input.fogCoord, c);
     return c;
 #endif
