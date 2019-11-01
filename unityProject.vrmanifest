@@ -1,0 +1,16 @@
+{
+  "source": "Unity",
+  "applications": [
+    {
+      "app_key": "application.generated.unity.shaders.exe",
+      "launch_type": "url",
+      "url": "steam://launch/",
+      "action_manifest_path": "C:\\Users\\atlas\\Documents\\Shaders\\actions.json",
+      "strings": {
+        "en_us": {
+          "name": "Shaders [Testing]"
+        }
+      }
+    }
+  ]
+}
