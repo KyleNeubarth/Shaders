@@ -2,6 +2,7 @@
 // https://github.com/keijiro/Pcx
 
 #include "UnityCG.cginc"
+//for encoding/decoding colors
 #include "Common.cginc"
 
 // Uniforms
