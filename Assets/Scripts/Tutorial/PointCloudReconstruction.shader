@@ -12,34 +12,35 @@
 
 			CGPROGRAM
 
-			//#include "UnityCG.cginc"
+			#include "UnityCG.cginc"
 			//#include "Common.cginc"
 
-			struct vInput {
+			//vInput will just be an appdata struct
+
+			struct gInput {
 				float4 position : POSITION;
 				half3 color : COLOR;
-			}
+			};
 
 			struct fInput {
 				
 				float2 uv : TEXCOORD0;
 				float4 position : SV_POSITION;
 			
-			}
+			};
 
 			#pragma vertex Vertex
 			//#pragma geometry Geometry
 			#pragma fragment Fragment
 
-			fInput Vertex(vInput input)
+			//appdata full contains pos, normal, tan, vert color, two texture coords(?)
+			gInput Vertex(appdata_full input)
 			{
-				float4 pos = input.position;
-				half3 col = input.color;
-
-				fInput f;
-				f.position = UnityObjectToClipPos(pos);
-
-				return f;
+				gInput o;
+				o.vertex = v.vertex;
+				o.normal = v.normal;
+				o.color = v.color;
+				return o;
 			}
 
 			half4 Fragment(fInput input) : SV_Target
