@@ -30,7 +30,7 @@
 			};
 
 			#pragma vertex Vertex
-			//#pragma geometry Geometry
+			#pragma geometry Geometry
 			#pragma fragment Fragment
 
 			//appdata full contains pos, normal, tan, vert color, two texture coords(?)
@@ -41,6 +41,14 @@
 				o.normal = v.normal;
 				o.color = v.color;
 				return o;
+			}
+			//how many vertices max should come out of this pass of the shader?
+			[maxvertexcount(12)]
+			//input is v2g for each triangle in the mesh, so arrays of 3 verts
+			//output is our trianglestream of frag inputs
+			void Geometry(triangle gInput input[3], inout TriangleStream<fInput> tristream)
+			{
+				
 			}
 
 			half4 Fragment(fInput input) : SV_Target

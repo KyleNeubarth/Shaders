@@ -51,8 +51,10 @@
 
 
 			[maxvertexcount(3)]
+			//inputs are in arrays of 1 because it expects a point cloud
 			void geom (point GS_INPUT tri[1], inout TriangleStream<FS_INPUT> triStream)
 			{
+				//initialize to zero, think this is redundant but might avoid errors
 				FS_INPUT pIn = (FS_INPUT)0;
 				pIn.normal = mul(unity_ObjectToWorld, tri[0].normal);
 				pIn.color = tri[0].color;
@@ -77,6 +79,7 @@
 			float4 frag (FS_INPUT i) : COLOR
 			{
 				float4 color = i.color;
+				//why doesn't this color the mesh?
 				color.a = step(0.5, tex2D(_MainTex, i.texcoord).a);
 				return color;
 			}
