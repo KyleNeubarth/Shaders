@@ -5,6 +5,7 @@
 		SubShader{
 			Pass {
 				Material {
+					//Just uses the default diffuse material, not much of a
 					Diffuse[_Color]
 				}
 				Lighting On
