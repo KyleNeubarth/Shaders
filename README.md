@@ -1,6 +1,13 @@
 # Shaders
-A unity project for noodling with shaders
+A short exploration of shaders in Unity3D through CU Boulder's Independent Study program.
 
-This is my test for my github pages site! Hopfully it will work!
 
 # ooh a heading
+
+{% highlight c# %}
+#container {
+    float: left;
+    margin: 0 -240px 0 0;
+    width: 100%;
+}
+{% endhighlight %}
