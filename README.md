@@ -2,11 +2,17 @@
 A short exploration of shaders in Unity3D through CU Boulder's Independent Study program.
 
 The Unity project itself is a small VR space where the user can teleport around and view the various shaders discussed below. The contents of this page will consist of a brief demonstration and explanation of each of the shader I have made during this study.
-This page will consist of a light tutorial involving Unity shader mechanics as I move through each of the shader programs I have studied. This will hopefully give an idea of the 
+This page will consist of a light tutorial involving Unity shader mechanics as I move through each of the shader programs I have studied, hopefully giving an idea of my though process behind 
 
 Some of the later shaders are derivative of existing projects, which will be cited below.
 
 # Contents
+
+- [Basic Shader] (#basic-shader)
+- [Display Normals]
+- [Display UVs]
+- [PCX Point Cloud]
+- [Leon Point Could]
 
 # Shaders 
 
@@ -14,23 +20,28 @@ yo this is the foreword
 
 ## Basic Shader
 
-This is what a shader is all about
-
-shader works like this
+This is the skeleton of a basic unity shader. By itself, this shader is rather pointless as it just uses the included "diffuse" shader with an input color. 
 
 ```c#
+//This decleares a shader with said title. 
+//The title doesn't need to match the name of the script, and can by found in the unity shaders hirearchy under the path used
 Shader "Tutorial/Basic" {
+	//The properties block contains all variables that can be changed in the editor
+	//They must have a name (_Color), an editor display name ("Main Color"), a type (Color) and an initial value
 	Properties{
 		_Color("Main Color", Color) = (1,0.5,0.5,1)
 	}
-		SubShader{
-			Pass {
-				Material {
-					//Just uses the default diffuse material, not much of a
-					Diffuse[_Color]
-				}
-				Lighting On
+	//a shader can contain multiple subshaders, which are primarily meant for different GPU types, but we won't woory about this here
+	SubShader{
+		//a pass is a single exectuion of code on the object, multiple passes can be used for different effects
+		Pass {
+			//This section isn't important for us now, it just sets the premade material with the premade shader
+			Material {
+				//This references our variable, color! note how variables always have an underscore before them
+				Diffuse[_Color]
 			}
+			Lighting On
+		}
 	}
 }
 ```
@@ -39,6 +50,12 @@ Shader "Tutorial/Basic" {
 
 <img src="images/DisplayNormals.PNG">
 
+Building off of our template, this shader uses vertex and frgment shader in order to display the normals of the object as colors. 
+
+There are multiple stages in a shader's "pipline". The vertex shader takes in ecah vertex of an object to perform operations on it. Usually for our purposes this means transforming the vertex coordinates into unity world space, and then saving important information about the vertex into a structure that will be passed to the fragment shader. Then the fragment shader runs on every pixel of the object, which in this case means displaying a color corresponding to the normals we found in the vertex shader.
+
+You will also see capitalized words to the right of some varibles. These are call Semantics and are used to tell the compiler what the variable will be used for. This is necessary in shaders, and a list of semantics can be found [here](https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics?redirectedfrom=MSDN).
+
 ```c#
   
 Shader "Tutorial/DisplayNormals"
@@ -46,29 +63,33 @@ Shader "Tutorial/DisplayNormals"
 	SubShader{
 
 		Pass {
-
+			//We are starting a CG script
 			CGPROGRAM
 			//has a vertex function named vert
 			#pragma vertex vert
 			//has a fragment function named frag
 			#pragma fragment frag
-			//include for useful functions, appbase is used here
+			//include for useful functions, appbase is a structure used here used here
 			#include "UnityCG.cginc"
 
+			//this struct will relay data from the vert shader to the frag shader.
+			//here we relay the position of the vertex (common) and a color based on the normal of that vertex
 			struct v2f {
 
 				float4 pos : SV_POSITION;
 				fixed3 color : COLOR0;
 
 			};
-
+			///appdata is a helpful struct included from UnityCG.cginc which contains all the vertex data we need
 			v2f vert(appdata_base v) {
 				v2f o;
+				//this magical function transforms the vertex data from v into worldspace
 				o.pos = UnityObjectToClipPos(v.vertex);
+				//transform the normal into a color!
 				o.color = v.normal * 0.5 + 0.5;
 				return o;
 			}
-
+			//not much to do here, just return the color that was relayed
 			fixed4 frag(v2f i) : SV_Target{
 				return fixed4(i.color,1);
 			}
@@ -78,13 +99,16 @@ Shader "Tutorial/DisplayNormals"
 		}
 
 	}
+	//did the subshader fail because my computer is a potato? Then just use this built in shader instead
 	Fallback "TexturedColored"
 }
 ```
 
-## Display UV's Shader
+## Display UVs Shader
 
 <img src="images/displayUV.PNG">
+
+This shader runs on a very similar principle to the previous one, expect it renders the texture coordinates (UVs) instead of the normals.
 
 ```c#
 Shader "Tutorial/DisplayUV"
@@ -101,14 +125,15 @@ Shader "Tutorial/DisplayUV"
 				float2 uv : TEXCOORD0;
 				float4 pos : SV_POSITION;
 			};
-
-			v2f vert(
-				float4 vertex : POSITION, // vertex position input
-				float2 uv : TEXCOORD0 // first texture coordinate input
-				)
+			//Here we won't use the appdata struct because we need the UV coordinates
+			//v represents the position of the vertex, and uv the UV of the vertex
+			//both use the required semantics!
+			v2f vert( float4 v : POSITION, uv : TEXCOORD0)
 			{
 				v2f o;
-				o.pos = UnityObjectToClipPos(vertex);
+				//this magical function transforms the vertex data from v into worldspace
+				o.pos = UnityObjectToClipPos(v);
+				//no math here, the uv can be directly read as a color!
 				o.uv = uv;
 				return o;
 			}
@@ -120,12 +145,16 @@ Shader "Tutorial/DisplayUV"
 			ENDCG
 		}
 	}
+	//did the subshader fail because my computer is a potato? Then just use this built in shader instead
+	Fallback "TexturedColored"
 }
 ```
 
-## Display UVs Shader
+## Texture + Color Shader
 
 <img src="images/Capture.PNG">
+
+This shader is a more typical shader. It takes a texture, applies it to an object, and then applies a color. This was more of a practice in applying user input and correctly applying it to the shaders. 
 
 ```c#
 Shader "Tutorial/Textured Colored" {
@@ -175,6 +204,9 @@ Shader "Tutorial/Textured Colored" {
 ## PCX's Point Cloud Shader
 
 <img src="images/pcx_Disk.PNG">
+[Link to PCX Github Page] (https://github.com/keijiro/Pcx)
+
+	
 
 ```c#
 Shader "Point Cloud/Disk"
@@ -198,6 +230,8 @@ Shader "Point Cloud/Disk"
             #pragma multi_compile_fog
             #pragma multi_compile _ UNITY_COLORSPACE_GAMMA
             #pragma multi_compile _ _COMPUTE_BUFFER
+	    
+	    //Vertex, Geometry, and Fragment shaders are included here, check below
             #include "Disk.cginc"
             ENDCG
         }
@@ -210,6 +244,8 @@ Shader "Point Cloud/Disk"
             #pragma fragment Fragment
             #pragma multi_compile _ _COMPUTE_BUFFER
             #define PCX_SHADOW_CASTER 1
+	    
+	    //Vertex, Geometry, and Fragment shaders are included here, check below
             #include "Disk.cginc"
             ENDCG
         }
@@ -358,6 +394,8 @@ half4 Fragment(Varyings input) : SV_Target
 ## Leon's Point Cloud Shader
 
 <img src="images/leon_cloud.PNG">
+[Link to Leon's repo](https://github.com/leon196/PointCloudExporter)
+
 
 ```c#
 Shader "Unlit/LeonPointCloud"
