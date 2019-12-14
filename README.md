@@ -1,4 +1,5 @@
-# Shaders
+# Shaders Study
+<h3>Kyle Neubarth</h3>
 A short exploration of shaders in Unity3D through CU Boulder's Independent Study program.
 
 The Unity project itself is a small VR space where the user can teleport around and view the various shaders discussed below. The contents of this page will consist of a brief demonstration and explanation of each of the shader I have made during this study.
@@ -13,10 +14,6 @@ Some of the later shaders are derivative of existing projects, which will be cit
 - [Display UVs]
 - [PCX Point Cloud]
 - [Leon Point Could]
-
-# Shaders 
-
-yo this is the foreword
 
 ## Basic Shader
 
@@ -159,6 +156,7 @@ This shader is a more typical shader. It takes a texture, applies it to an objec
 ```c#
 Shader "Tutorial/Textured Colored" {
 	Properties{
+		//two user inputs, defined and initialized
 		_Color("Main Color", Color) = (1,1,1,0.5)
 		_MainTex("Texture", 2D) = "white" { }
 	}
@@ -166,11 +164,13 @@ Shader "Tutorial/Textured Colored" {
 			Pass {
 
 			CGPROGRAM
+			//define shader functions
 			#pragma vertex vert
 			#pragma fragment frag
 
 			#include "UnityCG.cginc"
-
+			
+			//instantiate user inputs in the shader code
 			fixed4 _Color;
 			sampler2D _MainTex;
 
@@ -178,25 +178,26 @@ Shader "Tutorial/Textured Colored" {
 				float4 pos : SV_POSITION;
 				float2 uv : TEXCOORD0;
 			};
-
-			float4 _MainTex_ST;
-
+			//appdata base is a struct included in UnityCG, used as input for vertex shader
 			v2f vert(appdata_base v)
 			{
 				v2f o;
+				//translates position into world space
 				o.pos = UnityObjectToClipPos(v.vertex);
+				//transforms texture coords into coords on the object itself
 				o.uv = TRANSFORM_TEX(v.texcoord, _MainTex);
 				return o;
 			}
 
 			fixed4 frag(v2f i) : SV_Target
 			{
+				//get the color from the texture, then multiply it by our input color
 				fixed4 texcol = tex2D(_MainTex, i.uv);
 				return texcol * _Color;
 			}
 			ENDCG
 
-			}
+		}
 	}
 }
 ```
@@ -204,7 +205,7 @@ Shader "Tutorial/Textured Colored" {
 
 <img src="images/leon_cloud.PNG">
 This code is provided by Leon196
-[Link to Leon's repo](https://github.com/leon196/PointCloudExporter)
+<a href = "https://github.com/leon196/PointCloudExporter">Link to Leon's repo</a>
 
 This point cloud shader uses the geomtry shader section to counstruct triangles at each vertice. The geometry shader is an optional pipeline step inbetween the vertex and fragment steps, where we can use vertex data to create primitives. Geometry shaders are a little more complex than the other two we have covered. They take in arrays of vertices from the vertex shader, create geometry given that vertex data, and then push those triangles to a triangle stream which is fed into the fragment shader.
 
@@ -317,7 +318,7 @@ Shader "Unlit/LeonPointCloud"
 
 <img src="images/pcx_Disk.PNG">
 Modified code based off of code by Keijiro Takahashi
-[Link to PCX Github Page] (https://github.com/keijiro/Pcx)
+<a href="https://github.com/keijiro/Pcx">Link to PCX Github Page</a>
 
 This point cloud takes a different approach to the same problem, but uses disks instead of primitive triangles to display points. The way it functions is practically identical, but the geometry shader puts together an entire disk based on the point size. This means that higher point sizes will have many more verices, and can slow down the editor if each vertex of the point cloud has a disk containing the maximum 32 vertices. Another notable difference is that the actual shader functions are put in an include(Disk.cginc) file rather than in the main file. This works because #include in Unity shader language inserts the contents of the file where it is to be included. 
 
