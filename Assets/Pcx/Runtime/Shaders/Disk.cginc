@@ -26,6 +26,7 @@ struct Attributes
 };
 
 // Fragment varyings
+//This is the input for the geometry shader, and the output of the vertex shader
 struct Varyings
 {
 	float2 uv : TEXCOORD0;
@@ -71,7 +72,10 @@ Varyings Vertex(Attributes input)
 }
 
 // Geometry phase
+//a disk is capped off at 36 vertices, which is good because otherwise I could probably crash unity by increasing the size
 [maxvertexcount(36)]
+//We only take on vertex at a time(because point cloud)
+//Then spit the disks back out through the trianglestream
 void Geometry(point Varyings input[1], inout TriangleStream<Varyings> outStream)
 {
     float4 origin = input[0].position;
@@ -112,7 +116,8 @@ void Geometry(point Varyings input[1], inout TriangleStream<Varyings> outStream)
     o.position.x = origin.x;
     o.position.y = origin.y - extent.y;
     outStream.Append(o);
-
+    
+    //we are done with one disk
     outStream.RestartStrip();
 }
 
@@ -125,9 +130,9 @@ half4 Fragment(Varyings input) : SV_Target
 #else
 	//edit this line of code to get what I want!
 	//half4 c = half4(, 0, 0);
+	//apply colors to the disks!
 	half4 c = half4(input.color, _Tint.a);
     UNITY_APPLY_FOG(input.fogCoord, c);
     return c;
 #endif
 }
-
