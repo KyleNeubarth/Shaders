@@ -2,7 +2,7 @@
 A short exploration of shaders in Unity3D through CU Boulder's Independent Study program.
 
 The Unity project itself is a small VR space where the user can teleport around and view the various shaders discussed below. The contents of this page will consist of a brief demonstration and explanation of each of the shader I have made during this study.
-This page will consist of a light tutorial involving Unity shader mechanics as I move through each of the shader programs I have studied, hopefully giving an idea of my though process behind 
+This page will consist of a light tutorial involving Unity shader mechanics as I move through each of the shader programs I have studied, hopefully giving an idea of my though process throughout the study. Most of the code below will have a brief description of the concepts involved in the shader, and then heavily annotated code to show how these concepts are applied.
 
 Some of the later shaders are derivative of existing projects, which will be cited below.
 
@@ -52,7 +52,7 @@ Shader "Tutorial/Basic" {
 
 Building off of our template, this shader uses vertex and frgment shader in order to display the normals of the object as colors. 
 
-There are multiple stages in a shader's "pipline". The vertex shader takes in ecah vertex of an object to perform operations on it. Usually for our purposes this means transforming the vertex coordinates into unity world space, and then saving important information about the vertex into a structure that will be passed to the fragment shader. Then the fragment shader runs on every pixel of the object, which in this case means displaying a color corresponding to the normals we found in the vertex shader.
+There are multiple stages in a shader's "pipeline". The vertex shader takes in ecah vertex of an object to perform operations on it. Usually for our purposes this means transforming the vertex coordinates into unity world space, and then saving important information about the vertex into a structure that will be passed to the fragment shader. Then the fragment shader runs on every pixel of the object, which in this case means displaying a color corresponding to the normals we found in the vertex shader.
 
 You will also see capitalized words to the right of some varibles. These are call Semantics and are used to tell the compiler what the variable will be used for. This is necessary in shaders, and a list of semantics can be found [here](https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics?redirectedfrom=MSDN).
 
@@ -200,19 +200,134 @@ Shader "Tutorial/Textured Colored" {
 	}
 }
 ```
+## Leon's Point Cloud Shader
+
+<img src="images/leon_cloud.PNG">
+This code is provided by Leon196
+[Link to Leon's repo](https://github.com/leon196/PointCloudExporter)
+
+This point cloud shader uses the geomtry shader section to counstruct triangles at each vertice. The geometry shader is an optional pipeline step inbetween the vertex and fragment steps, where we can use vertex data to create primitives. Geometry shaders are a little more complex than the other two we have covered. They take in arrays of vertices from the vertex shader, create geometry given that vertex data, and then push those triangles to a triangle stream which is fed into the fragment shader.
+
+An interesting thing to note is that these triangles have a size parameter and face in the direction of the vertex normals. When the size of these triangles is large enough you get something like this:
+<img src = "images/leon_cat.PNG">
+<img src = "images/leon_cat_big.PNG">
+
+```c#
+Shader "Unlit/LeonPointCloud"
+{
+	Properties
+	{
+		_MainTex ("Texture (RGB)", 2D) = "white" {}
+		_Size ("Size", Float) = 0.1
+	}
+	SubShader
+	{
+		Tags { "Queue"="AlphaTest" "RenderType"="Transparent" "IgnoreProjector"="True" }
+		Blend One OneMinusSrcAlpha
+		AlphaToMask On
+		Cull Off
+
+		Pass
+		{
+			CGPROGRAM
+			//Define the functions for each shader
+			#pragma vertex vert
+			#pragma geometry geom
+			#pragma fragment frag
+			
+			#include "UnityCG.cginc"
+			
+			//input variables
+			sampler2D _MainTex;
+			float _Size;
+			
+			//each of these structs define the inputs for each shader step
+			
+			struct GS_INPUT
+			{
+				float4 vertex : POSITION;
+				float3 normal	: NORMAL;
+				float4 color	: COLOR;
+				float2 texcoord : TEXCOORD0;
+				float2 texcoord1 : TEXCOORD1;
+			};
+
+			struct FS_INPUT {
+				float4 vertex : SV_POSITION;
+				float3 normal : NORMAL;
+				float4 color : COLOR;
+				float2 texcoord : TEXCOORD0;
+			};
+			
+			//appdata_full is defined in UnityCG, and holds everything you would need in a vertex shader
+			GS_INPUT vert (appdata_full v)
+			{
+				GS_INPUT o = (GS_INPUT)0;
+				o.vertex = v.vertex;
+				o.normal = v.normal;
+				o.color = v.color;
+				return o;
+			}
+
+			//the geometry shader should at most output 3 vertices! (because triangles)
+			[maxvertexcount(3)]
+			//this part is a little tricky
+			//inputs are in arrays of 1 because it only does one point at a time, one vertex
+			//the inout keyword is needed for the output of the geometry shader
+			void geom (point GS_INPUT tri[1], inout TriangleStream<FS_INPUT> triStream)
+			{
+				//initialize to zero, think this is redundant but might avoid errors
+				FS_INPUT pIn = (FS_INPUT)0;
+				pIn.normal = mul(unity_ObjectToWorld, tri[0].normal);
+				pIn.color = tri[0].color;
+			
+				//the rest of this code calculates the three edges of the triangle and appends them to the output stream
+			
+				float4 vertex = mul(unity_ObjectToWorld, tri[0].vertex);
+				float3 tangent = normalize(cross(float3(0,1,0), pIn.normal));
+				float3 up = normalize(cross(tangent, pIn.normal));
+
+				pIn.vertex = mul(UNITY_MATRIX_VP, vertex + float4(tangent * -_Size / 1.5, 0));
+				pIn.texcoord = float2(-0.5,0);
+				triStream.Append(pIn);
+
+				pIn.vertex = mul(UNITY_MATRIX_VP, vertex + float4(up * _Size, 0));
+				pIn.texcoord = float2(0.5,1.5);
+				triStream.Append(pIn);
+
+				pIn.vertex = mul(UNITY_MATRIX_VP, vertex + float4(tangent * _Size / 1.5, 0));
+				pIn.texcoord = float2(1.5,0);
+				triStream.Append(pIn);
+			}
+
+			float4 frag (FS_INPUT i) : COLOR
+			{
+				float4 color = i.color;
+				//apply colors to the mesh based on the texture provided!
+				color.a = step(0.5, tex2D(_MainTex, i.texcoord).a);
+				return color;
+			}
+			ENDCG
+		}
+	}
+}
+```
 
 ## PCX's Point Cloud Shader
 
 <img src="images/pcx_Disk.PNG">
+Modified code based off of code by Keijiro Takahashi
 [Link to PCX Github Page] (https://github.com/keijiro/Pcx)
 
-	
+This point cloud takes a different approach to the same problem, but uses disks instead of primitive triangles to display points. The way it functions is practically identical, but the geometry shader puts together an entire disk based on the point size. This means that higher point sizes will have many more verices, and can slow down the editor if each vertex of the point cloud has a disk containing the maximum 32 vertices. Another notable difference is that the actual shader functions are put in an include(Disk.cginc) file rather than in the main file. This works because #include in Unity shader language inserts the contents of the file where it is to be included. 
 
 ```c#
 Shader "Point Cloud/Disk"
 {
     Properties
     {
+    	//tint controls the color of the cloud	
+	//point size controls the size of the disks
         _Tint("Tint", Color) = (0.5, 0.5, 0.5, 1)
         _PointSize("Point Size", Float) = 0.05
     }
@@ -224,9 +339,12 @@ Shader "Point Cloud/Disk"
         {
             Tags { "LightMode"="ForwardBase" }
             CGPROGRAM
+	    
+	    //declare shader functions
             #pragma vertex Vertex
             #pragma geometry Geometry
             #pragma fragment Fragment
+	    
             #pragma multi_compile_fog
             #pragma multi_compile _ UNITY_COLORSPACE_GAMMA
             #pragma multi_compile _ _COMPUTE_BUFFER
@@ -239,6 +357,7 @@ Shader "Point Cloud/Disk"
         {
             Tags { "LightMode"="ShadowCaster" }
             CGPROGRAM
+	    //declare shader functions
             #pragma vertex Vertex
             #pragma geometry Geometry
             #pragma fragment Fragment
@@ -284,6 +403,7 @@ struct Attributes
 };
 
 // Fragment varyings
+//This is the input for the geometry shader, and the output of the vertex shader
 struct Varyings
 {
 	float2 uv : TEXCOORD0;
@@ -329,7 +449,10 @@ Varyings Vertex(Attributes input)
 }
 
 // Geometry phase
+//a disk is capped off at 36 vertices, which is good because otherwise I could probably crash unity by increasing the size
 [maxvertexcount(36)]
+//We only take on vertex at a time(because point cloud)
+//Then spit the disks back out through the trianglestream
 void Geometry(point Varyings input[1], inout TriangleStream<Varyings> outStream)
 {
     float4 origin = input[0].position;
@@ -370,7 +493,8 @@ void Geometry(point Varyings input[1], inout TriangleStream<Varyings> outStream)
     o.position.x = origin.x;
     o.position.y = origin.y - extent.y;
     outStream.Append(o);
-
+    
+    //we are done with one disk
     outStream.RestartStrip();
 }
 
@@ -383,109 +507,12 @@ half4 Fragment(Varyings input) : SV_Target
 #else
 	//edit this line of code to get what I want!
 	//half4 c = half4(, 0, 0);
+	//apply colors to the disks!
 	half4 c = half4(input.color, _Tint.a);
     UNITY_APPLY_FOG(input.fogCoord, c);
     return c;
 #endif
 }
 
-```
-
-## Leon's Point Cloud Shader
-
-<img src="images/leon_cloud.PNG">
-[Link to Leon's repo](https://github.com/leon196/PointCloudExporter)
-
-
-```c#
-Shader "Unlit/LeonPointCloud"
-{
-	Properties
-	{
-		_MainTex ("Texture (RGB)", 2D) = "white" {}
-		_Size ("Size", Float) = 0.1
-	}
-	SubShader
-	{
-		Tags { "Queue"="AlphaTest" "RenderType"="Transparent" "IgnoreProjector"="True" }
-		Blend One OneMinusSrcAlpha
-		AlphaToMask On
-		Cull Off
-
-		Pass
-		{
-			CGPROGRAM
-			#pragma vertex vert
-			#pragma geometry geom
-			#pragma fragment frag
-			
-			#include "UnityCG.cginc"
-
-			sampler2D _MainTex;
-			float _Size;
-
-			struct GS_INPUT
-			{
-				float4 vertex : POSITION;
-				float3 normal	: NORMAL;
-				float4 color	: COLOR;
-				float2 texcoord : TEXCOORD0;
-				float2 texcoord1 : TEXCOORD1;
-			};
-
-			struct FS_INPUT {
-				float4 vertex : SV_POSITION;
-				float3 normal : NORMAL;
-				float4 color : COLOR;
-				float2 texcoord : TEXCOORD0;
-			};
-
-			GS_INPUT vert (appdata_full v)
-			{
-				GS_INPUT o = (GS_INPUT)0;
-				o.vertex = v.vertex;
-				o.normal = v.normal;
-				o.color = v.color;
-				return o;
-			}
-
-
-			[maxvertexcount(3)]
-			//inputs are in arrays of 1 because it expects a point cloud
-			void geom (point GS_INPUT tri[1], inout TriangleStream<FS_INPUT> triStream)
-			{
-				//initialize to zero, think this is redundant but might avoid errors
-				FS_INPUT pIn = (FS_INPUT)0;
-				pIn.normal = mul(unity_ObjectToWorld, tri[0].normal);
-				pIn.color = tri[0].color;
-
-				float4 vertex = mul(unity_ObjectToWorld, tri[0].vertex);
-				float3 tangent = normalize(cross(float3(0,1,0), pIn.normal));
-				float3 up = normalize(cross(tangent, pIn.normal));
-
-				pIn.vertex = mul(UNITY_MATRIX_VP, vertex + float4(tangent * -_Size / 1.5, 0));
-				pIn.texcoord = float2(-0.5,0);
-				triStream.Append(pIn);
-
-				pIn.vertex = mul(UNITY_MATRIX_VP, vertex + float4(up * _Size, 0));
-				pIn.texcoord = float2(0.5,1.5);
-				triStream.Append(pIn);
-
-				pIn.vertex = mul(UNITY_MATRIX_VP, vertex + float4(tangent * _Size / 1.5, 0));
-				pIn.texcoord = float2(1.5,0);
-				triStream.Append(pIn);
-			}
-
-			float4 frag (FS_INPUT i) : COLOR
-			{
-				float4 color = i.color;
-				//why doesn't this color the mesh?
-				color.a = step(0.5, tex2D(_MainTex, i.texcoord).a);
-				return color;
-			}
-			ENDCG
-		}
-	}
-}
 ```
 
