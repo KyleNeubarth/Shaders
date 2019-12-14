@@ -1,4 +1,4 @@
-﻿Shader "Tutorial/DisplayUV"
+Shader "Tutorial/DisplayUV"
 {
 	SubShader
 	{
@@ -12,14 +12,15 @@
 				float2 uv : TEXCOORD0;
 				float4 pos : SV_POSITION;
 			};
-
-			v2f vert(
-				float4 vertex : POSITION, // vertex position input
-				float2 uv : TEXCOORD0 // first texture coordinate input
-				)
+			//Here we won't use the appdata struct because we need the UV coordinates
+			//v represents the position of the vertex, and uv the UV of the vertex
+			//both use the required semantics!
+			v2f vert( float4 v : POSITION, uv : TEXCOORD0)
 			{
 				v2f o;
-				o.pos = UnityObjectToClipPos(vertex);
+				//this magical function transforms the vertex data from v into worldspace
+				o.pos = UnityObjectToClipPos(v);
+				//no math here, the uv can be directly read as a color!
 				o.uv = uv;
 				return o;
 			}
@@ -31,4 +32,6 @@
 			ENDCG
 		}
 	}
+	//did the subshader fail because my computer is a potato? Then just use this built in shader instead
+	Fallback "TexturedColored"
 }
