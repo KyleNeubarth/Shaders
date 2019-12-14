@@ -1,4 +1,4 @@
-﻿Shader "Unlit/LeonPointCloud"
+Shader "Unlit/LeonPointCloud"
 {
 	Properties
 	{
@@ -15,15 +15,19 @@
 		Pass
 		{
 			CGPROGRAM
+			//Define the functions for each shader
 			#pragma vertex vert
 			#pragma geometry geom
 			#pragma fragment frag
 			
 			#include "UnityCG.cginc"
-
+			
+			//input variables
 			sampler2D _MainTex;
 			float _Size;
-
+			
+			//each of these structs define the inputs for each shader step
+			
 			struct GS_INPUT
 			{
 				float4 vertex : POSITION;
@@ -39,7 +43,8 @@
 				float4 color : COLOR;
 				float2 texcoord : TEXCOORD0;
 			};
-
+			
+			//appdata_full is defined in UnityCG, and holds everything you would need in a vertex shader
 			GS_INPUT vert (appdata_full v)
 			{
 				GS_INPUT o = (GS_INPUT)0;
@@ -49,16 +54,20 @@
 				return o;
 			}
 
-
+			//the geometry shader should at most output 3 vertices! (because triangles)
 			[maxvertexcount(3)]
-			//inputs are in arrays of 1 because it expects a point cloud
+			//this part is a little tricky
+			//inputs are in arrays of 1 because it only does one point at a time, one vertex
+			//the inout keyword is needed for the output of the geometry shader
 			void geom (point GS_INPUT tri[1], inout TriangleStream<FS_INPUT> triStream)
 			{
 				//initialize to zero, think this is redundant but might avoid errors
 				FS_INPUT pIn = (FS_INPUT)0;
 				pIn.normal = mul(unity_ObjectToWorld, tri[0].normal);
 				pIn.color = tri[0].color;
-
+			
+				//the rest of this code calculates the three edges of the triangle and appends them to the output stream
+			
 				float4 vertex = mul(unity_ObjectToWorld, tri[0].vertex);
 				float3 tangent = normalize(cross(float3(0,1,0), pIn.normal));
 				float3 up = normalize(cross(tangent, pIn.normal));
@@ -79,7 +88,7 @@
 			float4 frag (FS_INPUT i) : COLOR
 			{
 				float4 color = i.color;
-				//why doesn't this color the mesh?
+				//apply colors to the mesh based on the texture provided!
 				color.a = step(0.5, tex2D(_MainTex, i.texcoord).a);
 				return color;
 			}
