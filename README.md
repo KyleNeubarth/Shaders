@@ -9,7 +9,7 @@ Some of the later shaders are derivative of existing projects, which will be cit
 
 # Contents
 
-- [Basic Shader] (#basic-shader)
+- [Basic Shader]
 - [Display Normals]
 - [Display UVs]
 - [PCX Point Cloud]
